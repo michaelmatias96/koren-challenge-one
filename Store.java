@@ -114,16 +114,15 @@ public class Store{
 			currentTransaction.executeTransaction();
 			// executes the given transaction -- see Transaction class for details 
 			
-			if (dailyProfit >= CLOSING_PROFIT){
+			if (this.closeStore()){
 				Integer todayProfit = (int) dailyProfit; 
 				everyDailyProfit.put(todayProfit, getDate()); 
 				dailyProfit = 0; 
 				productsSold = 0; 
 			}
-			// closes the store if, after the executed transaction, the daily profit has exceeded $10,000
+			// closes the store if, after the executed transaction, the daily profit has exceeded $10,000 or the closing hour has been reached 
 			// inserts today's profits to the everyDailyProfit map with today's date as the key 
 			// resets the daily profit and products sold to 0. 
 		}
-	}
-	
+	}	
 }
