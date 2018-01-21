@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,7 +6,8 @@ namespace StoreManager
 {
     public class Store
     {
-        WorkingHours storeWorkingHours;
+        private WorkingHours storeWorkingHours;
+        private bool storeIsOpen; 
         private int CLOSING_PROFIT = 10000;
         private List<Product> productList = new List<Product>();
         private double dailyProfit;
@@ -17,9 +18,9 @@ namespace StoreManager
 
         /* constructor -- the store manager does the following:
          * 
-         *          - establish working hours (through WorkingHours object) and store name. 
-         *          - creates a 'Product' object for every product he has at his store (see Product class for specifics) 
-                    - creates an ArrayList of these products and inputs that list to represent the store's available products 
+         *          - establishes the store's name and working hours (by creating a WorkingHours object)
+         *          - creates a 'Product' object for every type of product he has at his store (see Product class for specifics) 
+                    - creates an List of these product objects. The list represents the store's available products 
          */
         public Store(WorkingHours storeWorkingHours, string storeName, List<Product> inputedProductList)
         {
@@ -35,73 +36,82 @@ namespace StoreManager
             return storeName;
         }
 
-        // get today's profit 
+        // returns today's total daily profit 
         public double GetDailyProfit()
         {
             return dailyProfit;
         }
 
-        // get this store's working hours object
-
+        // returns this store's working hours object
         public WorkingHours GetWorkingHours()
         {
             return storeWorkingHours;
         }
 
-        // returns today's date in a String format 
-        private string GetDate()
+        // returns today's date in a string format 
+        public string GetStringDate()
         {
             DateTime todayDate = DateTime.Today;
             return todayDate.ToString("d");
         }
 
 
-        /* allows the store to close if the current hour is the designated closing hour or if today's profit has reached or exceeded $10,000
-         * if so: (1) resets daily profit and products sold to 0, 
-         *        (2) adds today's profit to the dictionary of every daily profit with today's date as the key
-         * returns true if closing conditions are met. returns false otherwise.  
+        /* method to check if the store should close right now:
+         * if the current hour is the designated closing hour or if today's profit has reached or exceeded $10,000
+         * returns true if the store should close now. returns false otherwise. 
          */
-        public bool CloseStore()
+        public bool shouldCloseStore()
         {
             DateTime todayDate = DateTime.Today;
-            int hour = todayDate.Hour; 
-            if (hour == storeWorkingHours.GetClosingHour() || dailyProfit >= CLOSING_PROFIT)
+            int currentHour = todayDate.Hour;
+            return (currentHour == storeWorkingHours.GetClosingHour() || dailyProfit >= CLOSING_PROFIT);
+        }
+       
+        /* method to close the store (if the closing conditions are met):
+         * if so: (1) resets daily profit and products sold to 0, 
+         *        (2) adds today's profit to the dictionary of every daily profit with today's date in string format as the key
+         */                                           
+        public void CloseStore()
+        {
+            if(shouldCloseStore())
             {
                 int todayProfit = (int)dailyProfit;
-                everyDailyProfit.Add(GetDate(), todayProfit);
+                everyDailyProfit.Add(GetStringDate(), todayProfit);
                 dailyProfit = 0;
                 productsSold = 0;
-                return true;
+                storeIsOpen = false; 
             }
-            return false;
         }
 
-        // method to check if the store is currently open 
-        public bool IsOpen()
+        // method to open the store, if possible. Updates the store's status to open. 
+        public void OpenStore()
         {
-            return !this.CloseStore();
-        }
-
-
-        // returns the Product object with the given name 
-        public Product GetProduct(string productName)
-        {
-            foreach (Product p in productList)
+            if(!shouldCloseStore())
             {
-                if (productName.Equals(p.GetName()))
+                storeIsOpen = true; 
+            }
+        }
+
+
+        // returns the inputed product 
+        public Product GetProduct(Product targetProduct)
+        {
+            foreach (Product product in productList)
+            {
+                if (targetProduct.GetName().Equals(product.GetName()))
                 {
-                    return p;
+                    return product;
                 }
             }
             return productList[0];
         }
 
         // checks if a given product is available in store 
-        public bool HasProduct(string productName)
+        public bool HasProduct(Product targetProduct)
         {
-            foreach (Product p in productList)
+            foreach (Product product in productList)
             {
-                if (productName.Equals(p.GetName()))
+                if (targetProduct.GetName().Equals(product.GetName()))
                 {
                     return true;
                 }
@@ -121,28 +131,67 @@ namespace StoreManager
             productsSold += salesToAdd;
         }
 
-        // method to execute a transaction 
+        // method to check if a given transaction can occur in this store. Returns a list of products that aren't available in store. 
+        // If all products are available, returns an empty list 
+        public List<Product> TransactionCanOccur(Transaction transactionToCheck)
+        {
+            var missingProducts = new List<Product>(); 
+            foreach (Product product in transactionToCheck.GetProductList())
+            {
+                if (!this.HasProduct(product))
+                {
+                    missingProducts.Add(product); 
+                }
+            }
+            return missingProducts;
+        }
+
+
+        // method to execute a transaction. A transaction is composed of a list of product objects to purchase. 
         public void ExecuteTransaction(Transaction currentTransaction)
         {
-
-            if (IsOpen())
+            // if this store is currently open and transaction can occur 
+            if (storeIsOpen && (TransactionCanOccur(currentTransaction).Count == 0) )
             {
-                // if this store is currently open
+                // update the store's total daily profit and its tally of how many items were purchased today 
+                double transactionCost = currentTransaction.GetTransactionCost();
+                AddDailyProfit(transactionCost);
+                int totalNumberItemsPurchased = currentTransaction.GetNumberItems();
+                AddSaleCount(totalNumberItemsPurchased);
 
-                currentTransaction.ExecuteTransaction();
-                // executes the given transaction -- see Transaction class for details 
-
-                if (this.CloseStore())
+                // update the inventory count for each product in the transaction
+                foreach (Product product in currentTransaction.GetProductList())
                 {
-                    int todayProfit = (int)dailyProfit;
-                    everyDailyProfit.Add(GetDate(), todayProfit);
-                    dailyProfit = 0;
-                    productsSold = 0;
+                    // how many instances of this product are being purchased. for example, if I buy 3 apples in this transaction, numberItems = 3 
+                    int numberItems = product.GetNumberToPurchase();
+
+                    // if there aren't enough items of this product in-stock, re-stock immediately. 
+                    if (product.GetInventoryCount() < numberItems)
+                    {
+                        product.AddInventory(numberItems);
+                    }
+
+                    product.SubtractInventory(numberItems);
                 }
-                // closes the store if, after the executed transaction, the daily profit has exceeded $10,000 or the closing hour has been reached 
-                // inserts today's profits to the everyDailyProfit map with today's date as the key 
-                // resets the daily profit and products sold to 0. 
             }
+
+            // checks if the store should close after this transaction has been executed, and if so closes it. 
+            if(shouldCloseStore())
+            {
+                CloseStore();
+            }
+        }
+
+        // method to refund a transaction - (1) update each product's inventory list according to how many were returned, 
+        // (2) update the dictionary daily profit entry for that date 
+        public void ExecuteRefund(Transaction transactionToRefund)
+        {
+            string transactionDate = transactionToRefund.transactionDate; 
+            foreach (Product product in transactionToRefund.GetProductList())
+            {
+                product.AddInventory(product.GetNumberToPurchase());
+            }
+            everyDailyProfit[transactionDate] -= (int) transactionToRefund.GetTransactionCost(); 
         }
     }
 }
