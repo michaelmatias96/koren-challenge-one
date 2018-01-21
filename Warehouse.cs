@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -9,12 +9,12 @@ namespace StoreManager
         private List<Store> storeBranches = new List<Store>(); 
 
         // method that returns every WareHouse King branch store that sells/has the given product 
-        public List<Store> StoreFinder(string productName)
+        public List<Store> GetStoresByProduct(Product targetProduct)
         {
             List<Store> storesWithProduct = new List<Store>();
             foreach (Store store in storeBranches)
             {
-                if (store.HasProduct(productName))
+                if (store.HasProduct(targetProduct))
                 {
                     storesWithProduct.Add(store);
                 }
@@ -22,8 +22,12 @@ namespace StoreManager
             return storesWithProduct;
         }
 
+        public string SayHi()
+        {
+            return "hi"; 
+        }
 
-        public static void Main(string[] args)
+        public void InitializeValues()
         {
             Product apple = new Product("apple", 2.00, 50);
             Product banana = new Product("banana", 2.00, 50);
@@ -34,12 +38,12 @@ namespace StoreManager
             List<Product> firstProductList = new List<Product>();
             List<Product> secondProductList = new List<Product>();
 
-            firstProductList.Add(apple); 
-            firstProductList.Add(banana); 
-            firstProductList.Add(cinnamonRoll); 
+            firstProductList.Add(apple);
+            firstProductList.Add(banana);
+            firstProductList.Add(cinnamonRoll);
             firstProductList.Add(croissant);
-            secondProductList.Add(apple); 
-            secondProductList.Add(cinnamonRoll); 
+            secondProductList.Add(apple);
+            secondProductList.Add(cinnamonRoll);
             secondProductList.Add(proteinShake);
 
             WorkingHours workingHours = new WorkingHours(800, 2200);
@@ -49,9 +53,9 @@ namespace StoreManager
             Store herzStore = new Store(workingHoursTwo, "Branch 2: Hertiziliyah", secondProductList);
             Store netanyaStore = new Store(workingHours, "Branch 3: Netanya", firstProductList);
 
-            Transaction transaction = new Transaction(firstProductList, ramatAvivStore);
-            Transaction secondTransaction = new Transaction(secondProductList, herzStore);
-            Transaction thirdTransaction = new Transaction(firstProductList, netanyaStore); 
+            Transaction transaction = new Transaction(firstProductList);
+            Transaction secondTransaction = new Transaction(secondProductList);
+            Transaction thirdTransaction = new Transaction(firstProductList);
             ramatAvivStore.ExecuteTransaction(transaction);
             herzStore.ExecuteTransaction(secondTransaction);
             netanyaStore.ExecuteTransaction(thirdTransaction);
@@ -60,7 +64,7 @@ namespace StoreManager
 
             Console.WriteLine("View daily profits: enter 1 for Ramat-Aviv store, 2 for Hertziliyah store, 3 for Netanya store");
 
-            string storeForProfit = Console.ReadLine(); 
+            string storeForProfit = Console.ReadLine();
 
             if (storeForProfit.Equals("1"))
             {
@@ -77,35 +81,36 @@ namespace StoreManager
 
             Console.WriteLine("View operating hours. Enter branch code: ");
 
-            string desiredStore = Console.ReadLine(); 
+            string desiredStore = Console.ReadLine();
 
             if (desiredStore.Equals("1"))
             {
-                string storeWorkingHours = ramatAvivStore.GetWorkingHours().GetStringWorkingHours(); 
+                string storeWorkingHours = ramatAvivStore.GetWorkingHours().toString();
                 Console.WriteLine(storeWorkingHours);
             }
             if (desiredStore.Equals("2"))
             {
-                string storeWorkingHours = herzStore.GetWorkingHours().GetStringWorkingHours();
+                string storeWorkingHours = herzStore.GetWorkingHours().toString();
                 Console.WriteLine(storeWorkingHours);
             }
-                if (desiredStore.Equals("3"))
+            if (desiredStore.Equals("3"))
             {
-                string storeWorkingHours = netanyaStore.GetWorkingHours().GetStringWorkingHours();
+                string storeWorkingHours = netanyaStore.GetWorkingHours().toString();
                 Console.WriteLine(storeWorkingHours);
             }
 
             Console.WriteLine("Check whether a product is in the Ramat Aviv store - enter product name: ");
 
-            string checkProduct = Console.ReadLine();
-            bool result = ramatAvivStore.HasProduct(checkProduct);
+            string productName = Console.ReadLine();
+            Product productToCheck = new Product(productName, 5, 40);
+            bool result = ramatAvivStore.HasProduct(productToCheck);
             if (result)
             {
-                Console.WriteLine("The store has " + checkProduct +"s");
+                Console.WriteLine("The store has " + productName + "s");
             }
             if (!result)
             {
-                Console.WriteLine("The store does not have: " + checkProduct + "s");
+                Console.WriteLine("The store does not have: " + productName + "s");
             }
         }
     }
