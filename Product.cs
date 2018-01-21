@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 namespace StoreManager
 {
     public class Product
@@ -6,11 +6,12 @@ namespace StoreManager
         private string productName;
         private double productPrice;
         private int inventoryCount;
+        private int numberToPurchase; 
 
         /*
         constructor -- the store manager inputs the following for every product type:
-             the name
-             the price
+             the name of the product
+             the price of 1 product 
              how many instances of that type of product there are initially at his store 
         */
 
@@ -21,7 +22,7 @@ namespace StoreManager
             this.inventoryCount = inventoryCount;
         }
 
-        // returns name of the product 
+        // returns the name of the product 
         public string GetName()
         {
             return productName;
@@ -45,11 +46,20 @@ namespace StoreManager
             inventoryCount += n;
         }
 
-        // for when this product is purchased, and the inventory decreases by 1 
-        public void SubtractInventory()
+        // for when this product is purchased - the inventory decreases by how many items of this product were purchased
+        public void SubtractInventory(int numberItemsBought)
         {
-            inventoryCount -= 1;
+            inventoryCount -= numberItemsBought; 
         }
 
+        public void SetNumberToPurchase(int numberToPurchase)
+        {
+            this.numberToPurchase = numberToPurchase; 
+        }
+
+        public int GetNumberToPurchase()
+        {
+            return numberToPurchase; 
+        }
     }
 }
