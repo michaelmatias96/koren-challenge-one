@@ -1,12 +1,12 @@
 using System;
 namespace StoreManager
 {
-    public class Product
+    public class Product : IComparable<Product>
     {
+        private ProductType productType; 
         private string productName;
         private double productPrice;
-        private int inventoryCount;
-        private int numberToPurchase; 
+         
 
         /*
         constructor -- the store manager inputs the following for every product type:
@@ -15,11 +15,11 @@ namespace StoreManager
              how many instances of that type of product there are initially at his store 
         */
 
-        public Product(string productName, double productPrice, int inventoryCount)
+        public Product(string productName, double productPrice, ProductType productType)
         {
             this.productName = productName;
             this.productPrice = productPrice;
-            this.inventoryCount = inventoryCount;
+            this.productType = productType; 
         }
 
         // returns the name of the product 
@@ -34,32 +34,23 @@ namespace StoreManager
             return productPrice;
         }
 
-        // returns the inventory count 
-        public int GetInventoryCount()
+        // returns the type of this product 
+        public ProductType GetProductType()
         {
-            return inventoryCount;
+            return productType; 
         }
 
-        // for when the store runs out, and more must be added 
-        public void AddInventory(int n)
+  
+        public int CompareTo(Product otherProduct)
         {
-            inventoryCount += n;
-        }
-
-        // for when this product is purchased - the inventory decreases by how many items of this product were purchased
-        public void SubtractInventory(int numberItemsBought)
-        {
-            inventoryCount -= numberItemsBought; 
-        }
-
-        public void SetNumberToPurchase(int numberToPurchase)
-        {
-            this.numberToPurchase = numberToPurchase; 
-        }
-
-        public int GetNumberToPurchase()
-        {
-            return numberToPurchase; 
+            if( (this.GetName() == otherProduct.GetName()) && (this.GetPrice() == otherProduct.GetPrice()) )
+            {
+                return 0; 
+            }
+            else
+            {
+                return -1; 
+            }
         }
     }
 }
