@@ -4,29 +4,33 @@ using System.Collections.Generic;
 
 namespace StoreManager
 {
-    public class Store
+    public class Store : IEnumerable
     {
+        private string storeName;
         private WorkingHours storeWorkingHours;
         private bool storeIsOpen; 
-        private int CLOSING_PROFIT = 10000;
-        private List<Product> productList = new List<Product>();
         private double dailyProfit;
+        private int MAX_DAILY_PROFIT = 10000;
         private int productsSold;
-        private string storeName;
-        private Dictionary<string, int> everyDailyProfit = new Dictionary<string, int>(); 
+        private Dictionary<DateTime, double> everyDailyProfit = new Dictionary<DateTime, double>(); 
+        private List<ProductType> availableProductTypes = new List<ProductType>();
+        private List<Product> allProductsInStore = new List<Product>();
+        private Dictionary<ProductType, int> inventoryCountByProductType = new Dictionary<ProductType, int>(); 
        
 
         /* constructor -- the store manager does the following:
          * 
          *          - establishes the store's name and working hours (by creating a WorkingHours object)
-         *          - creates a 'Product' object for every type of product he has at his store (see Product class for specifics) 
-                    - creates an List of these product objects. The list represents the store's available products 
+         *          - creates a 'ProductType' object for every type of product he has at his store 
+                    - creates an List of these ProductType objects. The list represents the store's available products. 
+                    - creates a list of every single product he has at the store. 
          */
-        public Store(WorkingHours storeWorkingHours, string storeName, List<Product> inputedProductList)
+        public Store(WorkingHours storeWorkingHours, string storeName, List<ProductType> availableProductTypes, List<Product> allProductsInStore)
         {
             this.storeWorkingHours = storeWorkingHours;
             this.storeName = storeName;
-            productList = inputedProductList;
+            this.availableProductTypes = availableProductTypes;
+            this.allProductsInStore = allProductsInStore; 
         }
 
 
@@ -48,13 +52,20 @@ namespace StoreManager
             return storeWorkingHours;
         }
 
-        // returns today's date in a string format 
-        public string GetStringDate()
+        // returns today's date as a DateTime object 
+        public DateTime GetDateTime()
         {
             DateTime todayDate = DateTime.Today;
-            return todayDate.ToString("d");
+            return todayDate;
         }
 
+        public IEnumerator GetEnumerator()
+        {
+            foreach (Product product in allProductsInStore)
+            {
+                yield return product; 
+            }
+        }
 
         /* method to check if the store should close right now:
          * if the current hour is the designated closing hour or if today's profit has reached or exceeded $10,000
@@ -62,9 +73,8 @@ namespace StoreManager
          */
         public bool shouldCloseStore()
         {
-            DateTime todayDate = DateTime.Today;
-            int currentHour = todayDate.Hour;
-            return (currentHour == storeWorkingHours.GetClosingHour() || dailyProfit >= CLOSING_PROFIT);
+            int currentHour = GetDateTime().Hour; 
+            return (currentHour == storeWorkingHours.GetClosingHour() || dailyProfit >= MAX_DAILY_PROFIT);
         }
        
         /* method to close the store (if the closing conditions are met):
@@ -75,8 +85,7 @@ namespace StoreManager
         {
             if(shouldCloseStore())
             {
-                int todayProfit = (int)dailyProfit;
-                everyDailyProfit.Add(GetStringDate(), todayProfit);
+                everyDailyProfit.Add(GetDateTime(), dailyProfit);
                 dailyProfit = 0;
                 productsSold = 0;
                 storeIsOpen = false; 
@@ -96,22 +105,22 @@ namespace StoreManager
         // returns the inputed product 
         public Product GetProduct(Product targetProduct)
         {
-            foreach (Product product in productList)
+            foreach (Product product in allProductsInStore)
             {
-                if (targetProduct.GetName().Equals(product.GetName()))
+                if (product.CompareTo(targetProduct) == 0)
                 {
                     return product;
                 }
             }
-            return productList[0];
+            return allProductsInStore[0];
         }
 
         // checks if a given product is available in store 
         public bool HasProduct(Product targetProduct)
         {
-            foreach (Product product in productList)
+            foreach (Product product in allProductsInStore)
             {
-                if (targetProduct.GetName().Equals(product.GetName()))
+                if (product.CompareTo(targetProduct) == 0)
                 {
                     return true;
                 }
@@ -131,7 +140,7 @@ namespace StoreManager
             productsSold += salesToAdd;
         }
 
-        // method to check if a given transaction can occur in this store. Returns a list of products that aren't available in store. 
+        // method to check if a given transaction can occur in this store. If not, returns a list of products that aren't available in store. 
         // If all products are available, returns an empty list 
         public List<Product> TransactionCanOccur(Transaction transactionToCheck)
         {
@@ -155,23 +164,22 @@ namespace StoreManager
             {
                 // update the store's total daily profit and its tally of how many items were purchased today 
                 double transactionCost = currentTransaction.GetTransactionCost();
-                AddDailyProfit(transactionCost);
-                int totalNumberItemsPurchased = currentTransaction.GetNumberItems();
+                this.AddDailyProfit(transactionCost);
+                int totalNumberItemsPurchased = currentTransaction.GetNumberItemsPurchased();
                 AddSaleCount(totalNumberItemsPurchased);
 
                 // update the inventory count for each product in the transaction
                 foreach (Product product in currentTransaction.GetProductList())
                 {
-                    // how many instances of this product are being purchased. for example, if I buy 3 apples in this transaction, numberItems = 3 
-                    int numberItems = product.GetNumberToPurchase();
+                    ProductType currentProductType = product.GetProductType(); 
 
                     // if there aren't enough items of this product in-stock, re-stock immediately. 
-                    if (product.GetInventoryCount() < numberItems)
+                    if (inventoryCountByProductType[currentProductType] == 0)
                     {
-                        product.AddInventory(numberItems);
+                        inventoryCountByProductType[currentProductType] = 50; 
                     }
 
-                    product.SubtractInventory(numberItems);
+                    inventoryCountByProductType[currentProductType] -= 1; 
                 }
             }
 
@@ -186,12 +194,13 @@ namespace StoreManager
         // (2) update the dictionary daily profit entry for that date 
         public void ExecuteRefund(Transaction transactionToRefund)
         {
-            string transactionDate = transactionToRefund.transactionDate; 
+            
             foreach (Product product in transactionToRefund.GetProductList())
             {
-                product.AddInventory(product.GetNumberToPurchase());
+                ProductType currentProductType = product.GetProductType();
+                inventoryCountByProductType[currentProductType] += 1; 
             }
-            everyDailyProfit[transactionDate] -= (int) transactionToRefund.GetTransactionCost(); 
+            everyDailyProfit[transactionToRefund.GetTransactionDate()] -= transactionToRefund.GetTransactionCost(); 
         }
     }
 }
