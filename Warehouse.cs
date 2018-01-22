@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StoreManager
 {
-    public class Warehouse
+    public class Warehouse : IEnumerable
     {
         private List<Store> storeBranches = new List<Store>(); 
 
@@ -22,36 +22,52 @@ namespace StoreManager
             return storesWithProduct;
         }
 
-        public string SayHi()
+        public IEnumerator GetEnumerator()
         {
-            return "hi"; 
+            foreach (Store store in storeBranches)
+            {
+                yield return store; 
+            }
         }
-
+  
         public void InitializeValues()
         {
-            Product apple = new Product("apple", 2.00, 50);
-            Product banana = new Product("banana", 2.00, 50);
-            Product cinnamonRoll = new Product("cinnamon roll", 4.00, 15);
-            Product croissant = new Product("croissant", 3.00, 10);
-            Product proteinShake = new Product("Protein Shake", 6.00, 20);
+            ProductType apple = new ProductType("apple", 50); 
+            Product apple1 = new Product("apple1", 2.00, apple);
+            Product apple2 = new Product("apple2", 2.00, apple);
+
+            ProductType cinnamonRoll = new ProductType("cinnamon roll", 10);
+            Product cinnamonRoll1 = new Product("cinnamon roll 1", 4.00, cinnamonRoll);
+            Product cinnamonRoll2 = new Product("cinnamon roll 2", 4.00, cinnamonRoll);
+
+            ProductType proteinShake = new ProductType("protein shake", 4); 
+            Product proteinShake1 = new Product("Protein Shake 1", 6.00, proteinShake);
 
             List<Product> firstProductList = new List<Product>();
             List<Product> secondProductList = new List<Product>();
 
-            firstProductList.Add(apple);
-            firstProductList.Add(banana);
-            firstProductList.Add(cinnamonRoll);
-            firstProductList.Add(croissant);
-            secondProductList.Add(apple);
-            secondProductList.Add(cinnamonRoll);
-            secondProductList.Add(proteinShake);
+            firstProductList.Add(apple1);
+            firstProductList.Add(apple2);
+            firstProductList.Add(cinnamonRoll1);
+            firstProductList.Add(cinnamonRoll2);
+
+            secondProductList.Add(apple1);
+            secondProductList.Add(proteinShake1);
+
+            List<ProductType> firstProductTypeList = new List<ProductType>();
+            List<ProductType> secondProductTypeList = new List<ProductType>();
+
+            firstProductTypeList.Add(apple);  
+            firstProductTypeList.Add(cinnamonRoll);
+            secondProductTypeList.Add(apple);
+            secondProductTypeList.Add(proteinShake);
 
             WorkingHours workingHours = new WorkingHours(800, 2200);
             WorkingHours workingHoursTwo = new WorkingHours(700, 1900);
 
-            Store ramatAvivStore = new Store(workingHours, "Branch 1: Ramat Aviv", firstProductList);
-            Store herzStore = new Store(workingHoursTwo, "Branch 2: Hertiziliyah", secondProductList);
-            Store netanyaStore = new Store(workingHours, "Branch 3: Netanya", firstProductList);
+            Store ramatAvivStore = new Store(workingHours, "Branch 1: Ramat Aviv", firstProductTypeList, firstProductList);
+            Store herzStore = new Store(workingHoursTwo, "Branch 2: Hertiziliyah", secondProductTypeList, secondProductList);
+            Store netanyaStore = new Store(workingHours, "Branch 3: Netanya", secondProductTypeList, firstProductList);
 
             Transaction transaction = new Transaction(firstProductList);
             Transaction secondTransaction = new Transaction(secondProductList);
@@ -102,7 +118,7 @@ namespace StoreManager
             Console.WriteLine("Check whether a product is in the Ramat Aviv store - enter product name: ");
 
             string productName = Console.ReadLine();
-            Product productToCheck = new Product(productName, 5, 40);
+            Product productToCheck = new Product(productName, 2.00, apple);
             bool result = ramatAvivStore.HasProduct(productToCheck);
             if (result)
             {
