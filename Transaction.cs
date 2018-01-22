@@ -13,18 +13,18 @@ namespace StoreManager
          */ 
 
         private List<Product> productsToPurchase = new List<Product>();
-        public string transactionDate; 
+        public DateTime transactionDate; 
 
         // constructor -- input a list of the products to be purchased in this transaction 
         public Transaction(List<Product> inputedProductsToPurchase)
         {
             productsToPurchase = inputedProductsToPurchase;
+            transactionDate = new DateTime(); 
         }
 
-        public void setTransactionDate()
+        public DateTime GetTransactionDate()
         {
-            DateTime todayDate = new DateTime();
-            transactionDate = todayDate.ToString("d");
+            return transactionDate; 
         }
 
         // returns the list of products in this transaction 
@@ -44,12 +44,12 @@ namespace StoreManager
             return totalCost;
         }
 
-        public int GetNumberItems()
+        public int GetNumberItemsPurchased()
         {
             int totalItemsPurchased = 0;
             foreach (Product product in productsToPurchase)
             {
-                totalItemsPurchased += product.GetNumberToPurchase();
+                totalItemsPurchased++;
             }
             return totalItemsPurchased;
         }
